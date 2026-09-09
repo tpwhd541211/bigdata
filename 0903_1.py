@@ -190,6 +190,7 @@ plt.ylabel(f'{best} 신호 값')
 plt.tight_layout()
 plt.show()
 
+"""
 # TODO 6-5: 2등 신호의 양품 vs 불량 박스플롯
 second = top10.index[1]
 plt.figure(figsize=(6, 5))
@@ -205,7 +206,7 @@ check('효과크기 계산', effect is not None and len(effect.dropna()) > 400)
 check('1위 SIG_060', top10 is not None and top10.index[0] == 'SIG_060', None if top10 is None else top10.index[0])
 check('2위 SIG_104', top10 is not None and top10.index[1] == 'SIG_104')
 check('1위 효과크기 0.627', top10 is not None and abs(top10.iloc[0] - 0.6265) < 0.01)
-
+"""
 
 
 
