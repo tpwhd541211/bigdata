@@ -13,7 +13,7 @@ for _f in ['Malgun Gothic', 'AppleGothic', 'NanumGothic', 'DejaVu Sans']:
 plt.rcParams['axes.unicode_minus'] = False
 pd.set_option('display.max_columns', 30)
 
-DATA = Path('C:/Users/user/PycharmProjects/PythonProject3/secom')   # 폴더를 옮겼다면 이 줄만 고치세요
+DATA = Path('C:/Users/sagog/Downloads')   # 폴더를 옮겼다면 이 줄만 고치세요
 
 def check(name, cond, hint=''):
     if cond:
@@ -159,23 +159,46 @@ check('모듈 8종', by_module is not None and len(by_module) == 8)
 
 
 print('='*24+'6번'+'='*24)
+
 # TODO 6-1: 불량 마스크
-is_fail = df['pass_fail'] == 'FAIL'
-print(is_fail)
+is_fail = df['label'] == True
+print(int(is_fail.sum()))
 
 # TODO 6-2: 그룹별 평균
-mean_fail = None
-mean_pass = None
+mean_fail = X[is_fail].mean()
+mean_pass = X[~is_fail].mean()
 
 # TODO 6-3: 효과크기 (절댓값, 큰 순서로 정렬)
-effect = None
+sd = X.std().replace(0, np.nan)
+effect = ((mean_fail - mean_pass) / sd).abs().sort_values(ascending=False)
 
 # TODO 6-4: Top 10 을 meta 와 합쳐 표로 출력
-top10 = None
+top10 = effect.head(10)
 
+top10_table = (meta.set_index('signal_id')
+                   .loc[top10.index]
+                   .assign(효과크기=top10.round(4)))
+print(top10_table[['module_kr', 'missing_rate', 'n_unique', '효과크기']])
 
 # TODO 6-5: 1등 신호의 양품 vs 불량 박스플롯
+best = top10.index[0]
+plt.figure(figsize=(6, 5))
+plt.boxplot([X.loc[~is_fail, best], X.loc[is_fail, best]], tick_labels=['양품', '불량'])
+plt.title(f'{best} 양품 vs 불량 분포 (효과크기 {top10.iloc[0]:.3f})')
+plt.xlabel('판정')
+plt.ylabel(f'{best} 신호 값')
+plt.tight_layout()
+plt.show()
 
+# TODO 6-5: 2등 신호의 양품 vs 불량 박스플롯
+second = top10.index[1]
+plt.figure(figsize=(6, 5))
+plt.boxplot([X.loc[~is_fail, second], X.loc[is_fail, second]], tick_labels=['양품', '불량'])
+plt.title(f'{second} 양품 vs 불량 분포 (효과크기 {top10.iloc[1]:.3f})')
+plt.xlabel('판정')
+plt.ylabel(f'{second} 신호 값')
+plt.tight_layout()
+plt.show()
 
 check('불량 104건', is_fail is not None and int(is_fail.sum()) == 104)
 check('효과크기 계산', effect is not None and len(effect.dropna()) > 400)
@@ -194,14 +217,25 @@ check('1위 효과크기 0.627', top10 is not None and abs(top10.iloc[0] - 0.626
 print('='*24+'7번'+'='*24)
 
 # TODO 7-1: 월 단위 컬럼 만들기
-#   힌트: df['timestamp'].dt.to_period('M')
-#   (아래에 직접 작성하세요)
-
+df['month'] = df['timestamp'].dt.to_period('M')
 
 # TODO 7-2: 월별 처리량 / 불량수 / 불량률
-monthly = None
+monthly = df.groupby('month').agg(
+    처리량=('wafer_id', 'count'),
+    불량수=('label', 'sum'),
+)
+monthly['불량률'] = (monthly['불량수'] / monthly['처리량'] * 100).round(2)
+print(monthly)
 
 # TODO 7-3: 월별 불량률 선그래프
+plt.figure(figsize=(7, 4))
+plt.plot(monthly.index.astype(str), monthly['불량률'], marker='o')
+plt.title('월별 불량률 추이')
+plt.xlabel('월')
+plt.ylabel('불량률 (%)')
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
 
 
 check('month 컬럼', df is not None and 'month' in df.columns and df['month'].notna().all())
