@@ -173,3 +173,57 @@ check('선택한 웨이퍼가 실제 그 유형인가',
 
 print('='*24+'5번'+'='*24)
 
+# TODO 5-1: MainEtch 구간만 뽑기 (16000행이어야 합니다)
+main = None
+
+# TODO 5-2: 웨이퍼별로 센서 8개의 mean/std/min/max 구하기
+#   힌트: main.groupby('wafer_id')[SENSORS].agg(['mean','std','min','max'])
+feat = None
+
+# TODO 5-3: 컬럼 이름을 rf_forward_W_mean 처럼 한 층으로 펴기
+#   힌트: feat.columns = ['_'.join(c) for c in feat.columns]
+
+
+check('MainEtch 16000행', main is not None and len(main) == 16000, None if main is None else len(main))
+check('특징 400행 32열', feat is not None and feat.shape == (400, 32), None if feat is None else feat.shape)
+check('컬럼명 평탄화', feat is not None and 'rf_reflected_W_max' in feat.columns)
+
+
+# TODO 6-1: 웨이퍼별 압력 기울기
+#   힌트: main.groupby('wafer_id').apply(lambda g: np.polyfit(g.t_sec, g.chamber_pressure_mTorr, 1)[0])
+slope = None
+
+# TODO 6-2: slope를 feat 에  pressure_slope 컬럼으로 붙이고 wafer_info 와 합치기
+#   feat 의 인덱스가 wafer_id 이므로 reset_index() 한 뒤 wi 와 merge 하세요
+#   결과는 400행이고 fault_type 컬럼이 들어 있어야 합니다
+data = None
+
+# TODO 6-3: 이상 유형별 기울기 평균 출력
+#   PRESSURE_DRIFT 만 튀는지 확인하세요
+
+
+check('기울기 400개', slope is not None and len(slope) == 400)
+check('data 결합', data is not None and 'fault_type' in data.columns and len(data) == 400)
+check('DRIFT 기울기가 가장 큼',
+      data is not None and data.groupby('fault_type').pressure_slope.mean().idxmax() == 'PRESSURE_DRIFT')
+
+
+# TODO 7-1: 세 특징을 이상 유형별 박스플롯으로 (1행 3열)
+#   ORDER 순서로 그리면 표와 그림을 나란히 읽기 좋습니다
+PICK = ['rf_reflected_W_max', 'pressure_slope', 'cf4_flow_sccm_mean']
+ORDER = ['NORMAL', 'RF_UNSTABLE', 'PRESSURE_DRIFT', 'GAS_LEAK']
+
+
+# TODO 7-2: 유형별 평균을 표로
+#   fault_type 으로 묶어 PICK 세 컬럼의 평균을 내세요 (4행 3열)
+summary = None
+
+# TODO 7-3: GAS_LEAK 은 정상과 얼마나 겹칩니까? (주석으로)
+#   답:
+
+
+check('요약표 4행', summary is not None and len(summary) == 4)
+check('RF 반사전력 최대는 RF_UNSTABLE 이 1위',
+      summary is not None and summary.rf_reflected_W_max.idxmax() == 'RF_UNSTABLE')
+check('CF4 평균은 GAS_LEAK 이 최소',
+      summary is not None and summary.cf4_flow_sccm_mean.idxmin() == 'GAS_LEAK')
