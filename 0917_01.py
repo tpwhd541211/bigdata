@@ -158,8 +158,8 @@ for ax, f_type in zip(axes, target_types):
     ax.set_ylabel(sensor)
     ax.legend()
 
-plt.tight_layout()
-plt.show()
+#plt.tight_layout()
+#plt.show()
 
 check('세 유형 선택', picks is not None and len(picks) == 3)
 check('선택한 웨이퍼가 실제 그 유형인가',
@@ -174,14 +174,18 @@ check('선택한 웨이퍼가 실제 그 유형인가',
 print('='*24+'5번'+'='*24)
 
 # TODO 5-1: MainEtch 구간만 뽑기 (16000행이어야 합니다)
-main = None
+main = tr[tr['step'] == 'MainEtch']
+print(main)
 
 # TODO 5-2: 웨이퍼별로 센서 8개의 mean/std/min/max 구하기
 #   힌트: main.groupby('wafer_id')[SENSORS].agg(['mean','std','min','max'])
-feat = None
+feat = main.groupby('wafer_id')[SENSORS].agg(['mean','std','min','max'])
+print(feat,"5-2")
 
 # TODO 5-3: 컬럼 이름을 rf_forward_W_mean 처럼 한 층으로 펴기
 #   힌트: feat.columns = ['_'.join(c) for c in feat.columns]
+feat.columns = ['_'.join(c) for c in feat.columns]
+print(feat,"5-3")
 
 
 check('MainEtch 16000행', main is not None and len(main) == 16000, None if main is None else len(main))
