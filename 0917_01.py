@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from pathlib import Path
+import seaborn as sns
+
 
 _have = {f.name for f in fm.fontManager.ttflist}
 for _f in ['Malgun Gothic', 'AppleGothic', 'NanumGothic', 'DejaVu Sans']:
@@ -193,18 +195,28 @@ check('특징 400행 32열', feat is not None and feat.shape == (400, 32), None 
 check('컬럼명 평탄화', feat is not None and 'rf_reflected_W_max' in feat.columns)
 
 
+
+
+
+
+print('='*24+'6번'+'='*24)
+
 # TODO 6-1: 웨이퍼별 압력 기울기
 #   힌트: main.groupby('wafer_id').apply(lambda g: np.polyfit(g.t_sec, g.chamber_pressure_mTorr, 1)[0])
-slope = None
+slope = main.groupby('wafer_id').apply(lambda g: np.polyfit(g.t_sec, g.chamber_pressure_mTorr, 1)[0])
 
 # TODO 6-2: slope를 feat 에  pressure_slope 컬럼으로 붙이고 wafer_info 와 합치기
 #   feat 의 인덱스가 wafer_id 이므로 reset_index() 한 뒤 wi 와 merge 하세요
 #   결과는 400행이고 fault_type 컬럼이 들어 있어야 합니다
-data = None
+feat['pressure_slope'] = slope
+data = (feat.reset_index().merge(wi, on='wafer_id', how='left'))
+print(data.shape)
+print(data['fault_type'].head())
 
 # TODO 6-3: 이상 유형별 기울기 평균 출력
 #   PRESSURE_DRIFT 만 튀는지 확인하세요
 
+print(data.groupby('fault_type')['pressure_slope'].mean())
 
 check('기울기 400개', slope is not None and len(slope) == 400)
 check('data 결합', data is not None and 'fault_type' in data.columns and len(data) == 400)
@@ -212,18 +224,41 @@ check('DRIFT 기울기가 가장 큼',
       data is not None and data.groupby('fault_type').pressure_slope.mean().idxmax() == 'PRESSURE_DRIFT')
 
 
+
+
+
+
+print('='*24+'7번'+'='*24)
+
+
 # TODO 7-1: 세 특징을 이상 유형별 박스플롯으로 (1행 3열)
 #   ORDER 순서로 그리면 표와 그림을 나란히 읽기 좋습니다
 PICK = ['rf_reflected_W_max', 'pressure_slope', 'cf4_flow_sccm_mean']
 ORDER = ['NORMAL', 'RF_UNSTABLE', 'PRESSURE_DRIFT', 'GAS_LEAK']
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
+for ax, col in zip(axes, PICK):
+    sns.boxplot(
+        data=data,
+        x='fault_type',
+        y=col,
+        order=ORDER,
+        ax=ax
+    )
+    ax.set_title(col)
+    ax.tick_params(axis='x', rotation=20)
+
+plt.tight_layout()
+plt.show()
 
 # TODO 7-2: 유형별 평균을 표로
 #   fault_type 으로 묶어 PICK 세 컬럼의 평균을 내세요 (4행 3열)
-summary = None
+
+summary = data.groupby('fault_type')[PICK].mean().reindex(ORDER)
+print(summary)
 
 # TODO 7-3: GAS_LEAK 은 정상과 얼마나 겹칩니까? (주석으로)
-#   답:
+#   답: Gas_LEAK 는 rf_reflected_W_max, Pressure_slop에선 정상과 비슷하고, cf4_flow_sccm_mean 에서도 Normal의 범위 내에 들어가있어서 구분이 힘들거 같습니다.
 
 
 check('요약표 4행', summary is not None and len(summary) == 4)
